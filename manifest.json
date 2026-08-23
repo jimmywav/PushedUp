@@ -1,0 +1,29 @@
+{
+  "name": "PushedUp",
+  "short_name": "PushedUp",
+  "description": "A daily pushup tracker with rest days and progressive weekly goals.",
+  "start_url": "/PushedUp/",
+  "scope": "/PushedUp/",
+  "display": "standalone",
+  "background_color": "#EFF3EC",
+  "theme_color": "#EFF3EC",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

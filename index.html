@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#EFF3EC">
+<title>PushedUp</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+:root{
+  --bg:#EFF3EC;
+  --ink:#26312A;
+  --sub:#7D8B7F;
+  --sage:#5B7A5E;
+  --sage-deep:#3E5941;
+  --card:#FFFFFF;
+  --today-ring:#3E5941;
+  --rest-day:#CBD9EC;
+  --rest-day-ink:#3D5A80;
+  --skip-day:#F0CDC9;
+  --skip-day-ink:#A6483F;
+  --track-empty:#E4EAE1;
+  --danger:#A6483F;
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html,body{
+  margin:0; padding:0; background:var(--bg); color:var(--ink);
+  font-family:'Space Grotesk', sans-serif;
+  height:100%;
+  overscroll-behavior-y:none;
+}
+
+button{ font-family:inherit; border:none; background:none; }
+
+#app{
+  max-width:480px;
+  margin:0 auto;
+  min-height:100vh;
+  padding:24px 20px 40px;
+}
+
+/* ---- Top bar ---- */
+.top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+.top .greet{ font-size:14px; color:var(--sub); }
+.top-right{ display:flex; align-items:center; gap:8px; }
+.week-badge{ font-size:13px; font-weight:600; background:var(--card); padding:6px 12px; border-radius:20px; }
+.icon-btn{
+  width:44px; height:44px; border-radius:50%; background:var(--card);
+  display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:19px; color:var(--sage-deep);
+}
+.icon-btn:active{ transform:scale(0.92); }
+
+/* ---- Hero ---- */
+.hero{ text-align:center; margin-bottom:22px; }
+.count{ font-size:96px; font-weight:700; line-height:0.85; letter-spacing:-0.03em; color:var(--sage-deep); }
+.goal-label{ font-size:14px; color:var(--sub); margin-top:6px; }
+.bar-track{ height:8px; background:var(--track-empty); border-radius:8px; margin-top:14px; overflow:hidden; }
+.bar-fill{ height:100%; background:var(--sage); border-radius:8px; transition:width 0.25s ease; }
+
+.reps-btn{
+  width:44px; height:44px; border-radius:50%; background:var(--card); font-size:20px; font-weight:700;
+  color:var(--sage-deep); cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+.reps-btn:active{ transform:scale(0.92); }
+.reps-input{
+  width:70px; text-align:center; font-size:20px; font-weight:700; color:var(--ink);
+  background:transparent; border:none; -moz-appearance:textfield;
+}
+.reps-input::-webkit-outer-spin-button, .reps-input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+
+/* ---- Stat cards ---- */
+.stats-row{ display:flex; gap:10px; margin-bottom:16px; }
+.stat-card{ flex:1; background:var(--card); border-radius:18px; padding:14px 10px; text-align:center; }
+.stat-card .num{ font-size:22px; font-weight:700; color:var(--sage-deep); }
+.stat-card .lbl{ font-size:10.5px; color:var(--sub); margin-top:3px; }
+
+/* ---- Calendar ---- */
+.cal-card{ background:var(--card); border-radius:22px; padding:18px 16px 20px; margin-bottom:16px; }
+.cal-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+.cal-title{ font-size:16px; font-weight:700; }
+.cal-nav{ display:flex; gap:6px; }
+.nav-btn{
+  width:28px; height:28px; border-radius:50%; background:var(--track-empty);
+  display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--sage-deep); cursor:pointer;
+}
+.weekday-row{ display:grid; grid-template-columns:repeat(7,1fr); margin-bottom:8px; }
+.weekday-row span{ text-align:center; font-size:11px; color:var(--sub); font-weight:600; }
+.day-grid{ display:grid; grid-template-columns:repeat(7,1fr); row-gap:8px; }
+.day{
+  aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:600; color:var(--ink); position:relative; cursor:pointer;
+}
+.day .disc{
+  width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  transition:transform 0.12s ease;
+}
+.day:active .disc{ transform:scale(0.88); }
+.day.complete .disc{ background:var(--sage); color:#fff; }
+.day.rest .disc{ background:var(--rest-day); color:var(--rest-day-ink); }
+.day.skip .disc{ background:var(--skip-day); color:var(--skip-day-ink); }
+.day.pending .disc{ color:var(--sub); }
+.day.future .disc{ color:var(--sub); cursor:default; }
+.day.other-month{ opacity:0.25; pointer-events:none; }
+.day.today .disc{ box-shadow:0 0 0 2px var(--today-ring); }
+
+.legend{ display:flex; gap:14px; margin-top:14px; flex-wrap:wrap; }
+.legend-item{ display:flex; align-items:center; gap:6px; font-size:11px; color:var(--sub); }
+.legend-dot{ width:10px; height:10px; border-radius:50%; }
+.legend-dot.complete{ background:var(--sage); }
+.legend-dot.rest{ background:var(--rest-day); }
+.legend-dot.skip{ background:var(--skip-day); }
+
+/* ---- Actions ---- */
+.actions{ display:flex; gap:10px; margin-bottom:8px; }
+.btn{ flex:1; padding:16px 0; text-align:center; border-radius:20px; font-weight:600; font-size:14px; cursor:pointer; }
+.btn.primary{ background:var(--sage-deep); color:#fff; }
+.btn.secondary{ background:var(--card); color:var(--sage-deep); }
+.btn:disabled{ opacity:0.4; cursor:default; }
+
+/* ---- Modal (day editor) ---- */
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(38,49,42,0.45);
+  display:flex; align-items:flex-end; justify-content:center; z-index:50;
+}
+.modal-overlay.hidden{ display:none; }
+.modal-sheet{
+  background:var(--bg); width:100%; max-width:480px; border-radius:24px 24px 0 0;
+  padding:24px 20px 32px; animation:slideUp 0.2s ease;
+}
+@keyframes slideUp{ from{ transform:translateY(20px); opacity:0; } to{ transform:translateY(0); opacity:1; } }
+.modal-title{ font-size:16px; font-weight:700; margin-bottom:4px; }
+.modal-sub{ font-size:13px; color:var(--sub); margin-bottom:18px; }
+.state-options{ display:flex; gap:8px; margin-bottom:16px; }
+.state-option{
+  flex:1; padding:12px 0; text-align:center; border-radius:14px; font-size:13px; font-weight:600;
+  background:var(--card); color:var(--sub); cursor:pointer; border:2px solid transparent;
+}
+.state-option.active.complete{ border-color:var(--sage); color:var(--sage-deep); background:#E4EEE3; }
+.state-option.active.rest{ border-color:var(--rest-day-ink); color:var(--rest-day-ink); background:var(--rest-day); }
+.state-option.active.skip{ border-color:var(--skip-day-ink); color:var(--skip-day-ink); background:var(--skip-day); }
+.state-option:disabled{ opacity:0.35; cursor:default; }
+.modal-reps-row{ display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:20px; }
+.modal-actions{ display:flex; gap:10px; }
+.modal-note{ font-size:12px; color:var(--danger); margin-top:-6px; margin-bottom:12px; }
+
+/* ---- Settings panel ---- */
+.settings-panel{ background:var(--card); border-radius:22px; padding:20px; margin-bottom:16px; }
+.settings-row{ display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--track-empty); }
+.settings-row:last-child{ border-bottom:none; }
+.settings-label{ font-size:14px; font-weight:600; }
+.settings-sub{ font-size:11.5px; color:var(--sub); margin-top:2px; }
+.settings-input{
+  width:70px; text-align:right; font-size:15px; font-weight:700; color:var(--sage-deep);
+  background:var(--bg); border-radius:10px; padding:8px 10px; border:none;
+}
+.link-row{ text-align:center; font-size:13px; color:var(--sage-deep); font-weight:600; padding:14px 0; cursor:pointer; }
+.link-row.danger{ color:var(--danger); }
+
+.toggle-switch{
+  position:relative; width:46px; height:26px; border-radius:13px; background:var(--track-empty); cursor:pointer; flex-shrink:0;
+}
+.toggle-switch.on{ background:var(--sage); }
+.toggle-switch .knob{
+  position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff;
+  transition:transform 0.15s ease; box-shadow:0 1px 3px rgba(0,0,0,0.2);
+}
+.toggle-switch.on .knob{ transform:translateX(20px); }
+.time-input{
+  font-size:15px; font-weight:700; color:var(--sage-deep); background:var(--bg); border-radius:10px;
+  padding:8px 10px; border:none;
+}
+.settings-note{ font-size:11.5px; color:var(--sub); line-height:1.4; padding:4px 0 2px; }
+
+/* ---- Settings drawer ---- */
+.drawer-backdrop{
+  position:fixed; inset:0; background:rgba(38,49,42,0.4);
+  opacity:0; pointer-events:none; transition:opacity 0.25s ease; z-index:60;
+}
+.drawer-backdrop.open{ opacity:1; pointer-events:auto; }
+.settings-drawer{
+  position:fixed; top:0; right:0; bottom:0; width:88%; max-width:420px;
+  background:var(--bg); z-index:61; padding:24px 20px 40px; overflow-y:auto;
+  transform:translateX(100%); transition:transform 0.28s cubic-bezier(0.25,0.8,0.25,1);
+  box-shadow:-8px 0 24px rgba(38,49,42,0.12);
+}
+.settings-drawer.open{ transform:translateX(0); }
+.drawer-handle{
+  width:4px; height:36px; border-radius:4px; background:var(--track-empty);
+  position:absolute; left:10px; top:50%; transform:translateY(-50%);
+}
+
+.hidden{ display:none !important; }
+
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- HOME VIEW -->
+  <div id="homeView">
+    <div class="top">
+      <div class="greet" id="todayLabel">Monday, Aug 24</div>
+      <div class="top-right">
+        <div class="week-badge" id="weekBadge">Week 6</div>
+        <div class="icon-btn" id="settingsBtn" aria-label="Settings">⚙</div>
+      </div>
+    </div>
+
+    <div class="hero">
+      <div class="count" id="repsCount">0</div>
+      <div class="goal-label" id="goalLabel">of 34 pushups today</div>
+      <div class="bar-track"><div class="bar-fill" id="barFill" style="width:0%"></div></div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="num" id="currentStreak">0</div><div class="lbl">Current streak</div></div>
+      <div class="stat-card"><div class="num" id="bestStreak">0</div><div class="lbl">Best streak</div></div>
+      <div class="stat-card"><div class="num" id="restsLeft">2/2</div><div class="lbl">Rests left</div></div>
+    </div>
+
+    <div class="cal-card">
+      <div class="cal-header">
+        <div class="cal-title" id="calMonthLabel">August 2026</div>
+        <div class="cal-nav">
+          <div class="nav-btn" id="calPrev">‹</div>
+          <div class="nav-btn" id="calNext">›</div>
+        </div>
+      </div>
+      <div class="weekday-row">
+        <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+      </div>
+      <div class="day-grid" id="dayGrid"></div>
+      <div class="legend">
+        <div class="legend-item"><span class="legend-dot complete"></span>Complete</div>
+        <div class="legend-item"><span class="legend-dot rest"></span>Rest</div>
+        <div class="legend-item"><span class="legend-dot skip"></span>Skip</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" id="logTodayBtn">Log pushups</button>
+      <button class="btn secondary" id="restTodayBtn">Use a rest day</button>
+    </div>
+  </div>
+
+  <!-- SETTINGS DRAWER -->
+  <div id="drawerBackdrop" class="drawer-backdrop"></div>
+  <div id="settingsView" class="settings-drawer">
+    <div class="drawer-handle"></div>
+    <div class="top">
+      <div class="greet" style="font-size:16px; font-weight:700; color:var(--ink);">Settings</div>
+      <div class="icon-btn" id="closeSettingsBtn" aria-label="Close">✕</div>
+    </div>
+
+    <div class="settings-panel">
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Starting goal</div>
+          <div class="settings-sub">Pushups per day, week one</div>
+        </div>
+        <input type="number" class="settings-input" id="startingGoalInput" min="1">
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Weekly increase</div>
+          <div class="settings-sub">Added after a fully completed week</div>
+        </div>
+        <input type="number" class="settings-input" id="incrementInput" min="0">
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Tracking start date</div>
+          <div class="settings-sub">First day counted toward your goal</div>
+        </div>
+        <input type="date" class="settings-input" id="startDateInput" style="width:135px; text-align:left;">
+      </div>
+    </div>
+
+    <div class="settings-panel">
+      <div class="link-row" id="exportBtn">Export data (backup)</div>
+      <div class="link-row" id="importBtn">Import data</div>
+      <input type="file" id="importFile" accept="application/json" class="hidden">
+      <div class="link-row danger" id="resetBtn">Reset all data</div>
+    </div>
+  </div>
+
+  <!-- DAY EDITOR MODAL -->
+  <div id="dayModalOverlay" class="modal-overlay hidden">
+    <div class="modal-sheet">
+      <div class="modal-title" id="modalDateLabel">Saturday, Aug 8</div>
+      <div class="modal-sub" id="modalGoalLabel">Goal that day: 30 pushups</div>
+
+      <div class="state-options">
+        <div class="state-option complete" data-state="complete">Complete</div>
+        <div class="state-option rest" data-state="rest">Rest</div>
+        <div class="state-option skip" data-state="skip">Skip</div>
+      </div>
+      <div class="modal-note hidden" id="restBlockedNote">Both rest days for this week are already used.</div>
+
+      <div class="modal-reps-row" id="modalRepsRow">
+        <div class="reps-btn" id="modalRepsMinus">−</div>
+        <input type="number" inputmode="numeric" class="reps-input" id="modalRepsInput" value="0" min="0">
+        <div class="reps-btn" id="modalRepsPlus">+</div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn secondary" id="modalCancel">Cancel</button>
+        <button class="btn primary" id="modalSave">Save</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ---------- Storage ----------
+const STORAGE_KEY = 'pushedup_data_v1';
+
+function loadData() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) return JSON.parse(raw);
+  const today = new Date();
+  const data = {
+    settings: {
+      startingGoal: 20,
+      increment: 2,
+      startDate: toISODate(getWeekStart(today)) // default: Monday of this week
+    },
+    logs: {} // 'YYYY-MM-DD' -> { state: 'complete'|'rest'|'skip', reps: number }
+  };
+  saveData(data);
+  return data;
+}
+
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+let DATA = loadData();
+
+// ---------- Date helpers ----------
+function toISODate(d) {
+  const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+function fromISODate(s) {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+function addDays(d, n) {
+  const nd = new Date(d);
+  nd.setDate(nd.getDate() + n);
+  return nd;
+}
+function startOfDay(d) {
+  const nd = new Date(d);
+  nd.setHours(0, 0, 0, 0);
+  return nd;
+}
+// Monday-start week
+function getWeekStart(d) {
+  const nd = startOfDay(d);
+  const day = nd.getDay(); // 0=Sun..6=Sat
+  const diff = (day === 0 ? 6 : day - 1); // days since Monday
+  return addDays(nd, -diff);
+}
+function isSameDay(a, b) {
+  return toISODate(a) === toISODate(b);
+}
+function todayDate() {
+  return startOfDay(new Date());
+}
+
+// ---------- Goal computation ----------
+// Returns the pushup goal that applies to the week starting at weekStart.
+// Walks forward from the tracking start date, only incrementing after a
+// fully-completed week (per settings.increment rule).
+function goalForWeek(weekStart) {
+  const settings = DATA.settings;
+  let cursor = getWeekStart(fromISODate(settings.startDate));
+  let goal = settings.startingGoal;
+  const target = getWeekStart(weekStart);
+  const today = todayDate();
+
+  while (cursor < target) {
+    const weekEnd = addDays(cursor, 6);
+    // Only weeks that have fully elapsed can grant an increase.
+    if (weekEnd < today) {
+      if (isWeekFullyCompleted(cursor, goal)) {
+        goal += settings.increment;
+      }
+    }
+    cursor = addDays(cursor, 7);
+  }
+  return goal;
+}
+
+function isWeekFullyCompleted(weekStart, goal) {
+  const today = todayDate();
+  for (let i = 0; i < 7; i++) {
+    const day = addDays(weekStart, i);
+    if (day > today) return false; // week not actually over
+    const entry = DATA.logs[toISODate(day)];
+    if (entry && entry.state === 'rest') continue;
+    if (entry && entry.state === 'complete' && entry.reps >= goal) continue;
+    return false; // skip, incomplete reps, or unlogged day
+  }
+  return true;
+}
+
+function goalForDate(date) {
+  return goalForWeek(getWeekStart(date));
+}
+
+function restsUsedInWeek(weekStart, excludeDateISO) {
+  let count = 0;
+  for (let i = 0; i < 7; i++) {
+    const iso = toISODate(addDays(weekStart, i));
+    if (iso === excludeDateISO) continue;
+    const entry = DATA.logs[iso];
+    if (entry && entry.state === 'rest') count++;
+  }
+  return count;
+}
+
+// Effective state of a given date, accounting for days with no log entry.
+function stateForDate(date) {
+  const today = todayDate();
+  const iso = toISODate(date);
+  const entry = DATA.logs[iso];
+  if (date > today) return 'future';
+  if (entry) return entry.state;
+  if (isSameDay(date, today)) return 'pending'; // today, not logged yet
+  return 'skip'; // past day, nothing logged
+}
+
+// ---------- Streaks ----------
+function computeStreaks() {
+  const today = todayDate();
+  // Walk backwards from today (or yesterday if today is still pending/unlogged)
+  let current = 0;
+  let cursor = today;
+  // If today hasn't been logged yet, don't break the streak on it, but don't count it either.
+  const todayState = stateForDate(today);
+  if (todayState === 'skip') {
+    // today already resolved as a skip (only possible if explicitly logged as skip)
+    cursor = addDays(today, -1);
+  } else if (todayState === 'complete' || todayState === 'rest') {
+    // counts, keep cursor at today
+  } else {
+    // pending: skip counting today, start from yesterday
+    cursor = addDays(today, -1);
+  }
+
+  while (true) {
+    const s = stateForDate(cursor);
+    if (s === 'complete' || s === 'rest') {
+      current++;
+      cursor = addDays(cursor, -1);
+    } else {
+      break;
+    }
+  }
+
+  // Best streak: scan all logged history plus today
+  let best = 0, run = 0;
+  const start = fromISODate(DATA.settings.startDate);
+  let d = start;
+  while (d <= today) {
+    const s = stateForDate(d);
+    if (s === 'complete' || s === 'rest') {
+      run++;
+      best = Math.max(best, run);
+    } else {
+      run = 0;
+    }
+    d = addDays(d, 1);
+  }
+  best = Math.max(best, current);
+
+  return { current, best };
+}
+
+// ---------- Rendering: Home ----------
+let calendarMonthCursor = todayDate(); // month currently shown
+
+function renderHome() {
+  const today = todayDate();
+  const goal = goalForDate(today);
+  const todayISO = toISODate(today);
+  const entry = DATA.logs[todayISO];
+  const reps = entry ? entry.reps : 0;
+
+  document.getElementById('todayLabel').textContent = today.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+  const weekNum = Math.floor((getWeekStart(today) - getWeekStart(fromISODate(DATA.settings.startDate))) / (7 * 86400000)) + 1;
+  document.getElementById('weekBadge').textContent = `Week ${weekNum}`;
+
+  document.getElementById('repsCount').textContent = reps;
+  document.getElementById('goalLabel').textContent = `of ${goal} pushups today`;
+  const pct = Math.min(100, Math.round((reps / goal) * 100));
+  document.getElementById('barFill').style.width = pct + '%';
+
+  const streaks = computeStreaks();
+  document.getElementById('currentStreak').textContent = streaks.current;
+  document.getElementById('bestStreak').textContent = streaks.best;
+
+  const weekStart = getWeekStart(today);
+  const restsUsed = restsUsedInWeek(weekStart, null);
+  document.getElementById('restsLeft').textContent = `${2 - restsUsed}/2`;
+
+  const restTodayBtn = document.getElementById('restTodayBtn');
+  const alreadyResolved = entry && (entry.state === 'complete' || entry.state === 'rest' || entry.state === 'skip');
+  restTodayBtn.disabled = restsUsed >= 2 && !(entry && entry.state === 'rest');
+  restTodayBtn.textContent = (entry && entry.state === 'rest') ? 'Rest day used ✓' : 'Use a rest day';
+
+  renderCalendar();
+}
+
+document.getElementById('logTodayBtn').addEventListener('click', () => {
+  openDayModal(todayDate());
+});
+
+document.getElementById('restTodayBtn').addEventListener('click', () => {
+  const today = todayDate();
+  const iso = toISODate(today);
+  const weekStart = getWeekStart(today);
+  const existing = DATA.logs[iso];
+  if (existing && existing.state === 'rest') {
+    delete DATA.logs[iso]; // toggle off
+    saveData(DATA);
+    renderHome();
+    return;
+  }
+  const used = restsUsedInWeek(weekStart, iso);
+  if (used >= 2) {
+    alert('Both rest days for this week are already used.');
+    return;
+  }
+  DATA.logs[iso] = { state: 'rest', reps: existing ? existing.reps : 0 };
+  saveData(DATA);
+  renderHome();
+});
+
+// ---------- Rendering: Calendar ----------
+function renderCalendar() {
+  const monthStart = new Date(calendarMonthCursor.getFullYear(), calendarMonthCursor.getMonth(), 1);
+  document.getElementById('calMonthLabel').textContent = monthStart.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+  const grid = document.getElementById('dayGrid');
+  grid.innerHTML = '';
+
+  const firstWeekday = monthStart.getDay(); // 0=Sun
+  const leading = (firstWeekday === 0 ? 6 : firstWeekday - 1);
+  const daysInMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate();
+  const totalSoFar = leading + daysInMonth;
+  const trailing = (7 - (totalSoFar % 7)) % 7;
+
+  const today = todayDate();
+
+  // Leading days (previous month, non-interactive)
+  const prevMonthLastDate = new Date(monthStart.getFullYear(), monthStart.getMonth(), 0).getDate();
+  for (let i = leading - 1; i >= 0; i--) {
+    const d = document.createElement('div');
+    d.className = 'day other-month';
+    d.innerHTML = `<div class="disc">${prevMonthLastDate - i}</div>`;
+    grid.appendChild(d);
+  }
+
+  // This month
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(monthStart.getFullYear(), monthStart.getMonth(), day);
+    const state = stateForDate(date);
+    const el = document.createElement('div');
+    el.className = `day ${state}` + (isSameDay(date, today) ? ' today' : '');
+    el.innerHTML = `<div class="disc">${day}</div>`;
+    if (state !== 'future') {
+      el.addEventListener('click', () => openDayModal(date));
+    }
+    grid.appendChild(el);
+  }
+
+  // Trailing days (next month, non-interactive)
+  for (let day = 1; day <= trailing; day++) {
+    const d = document.createElement('div');
+    d.className = 'day other-month';
+    d.innerHTML = `<div class="disc">${day}</div>`;
+    grid.appendChild(d);
+  }
+}
+
+document.getElementById('calPrev').addEventListener('click', () => {
+  calendarMonthCursor = new Date(calendarMonthCursor.getFullYear(), calendarMonthCursor.getMonth() - 1, 1);
+  renderCalendar();
+});
+document.getElementById('calNext').addEventListener('click', () => {
+  calendarMonthCursor = new Date(calendarMonthCursor.getFullYear(), calendarMonthCursor.getMonth() + 1, 1);
+  renderCalendar();
+});
+
+// ---------- Day editor modal ----------
+let modalDate = null;
+
+function openDayModal(date) {
+  modalDate = date;
+  const iso = toISODate(date);
+  const entry = DATA.logs[iso];
+  const goal = goalForDate(date);
+  const weekStart = getWeekStart(date);
+  const restsUsed = restsUsedInWeek(weekStart, iso);
+  const restBlocked = restsUsed >= 2 && !(entry && entry.state === 'rest');
+
+  document.getElementById('modalDateLabel').textContent = date.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+  document.getElementById('modalGoalLabel').textContent = `Goal that day: ${goal} pushups`;
+
+  const currentState = entry ? entry.state : (isSameDay(date, todayDate()) ? null : 'skip');
+  document.querySelectorAll('.state-option').forEach(opt => {
+    const s = opt.dataset.state;
+    opt.classList.toggle('active', s === currentState);
+    opt.disabled = (s === 'rest' && restBlocked);
+  });
+  document.getElementById('restBlockedNote').classList.toggle('hidden', !restBlocked);
+  document.getElementById('modalRepsInput').value = entry ? entry.reps : 0;
+  document.getElementById('modalRepsRow').style.display = (currentState === 'rest') ? 'none' : 'flex';
+
+  document.getElementById('dayModalOverlay').classList.remove('hidden');
+}
+
+document.querySelectorAll('.state-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    if (opt.disabled) return;
+    document.querySelectorAll('.state-option').forEach(o => o.classList.remove('active'));
+    opt.classList.add('active');
+    document.getElementById('modalRepsRow').style.display = (opt.dataset.state === 'rest') ? 'none' : 'flex';
+  });
+});
+document.getElementById('modalRepsMinus').addEventListener('click', () => {
+  const input = document.getElementById('modalRepsInput');
+  input.value = Math.max(0, parseInt(input.value || '0', 10) - 1);
+});
+document.getElementById('modalRepsPlus').addEventListener('click', () => {
+  const input = document.getElementById('modalRepsInput');
+  input.value = parseInt(input.value || '0', 10) + 1;
+});
+document.getElementById('modalCancel').addEventListener('click', () => {
+  document.getElementById('dayModalOverlay').classList.add('hidden');
+});
+document.getElementById('modalSave').addEventListener('click', () => {
+  const active = document.querySelector('.state-option.active');
+  const iso = toISODate(modalDate);
+  if (!active) {
+    delete DATA.logs[iso];
+  } else {
+    const state = active.dataset.state;
+    if (state === 'rest') {
+      const weekStart = getWeekStart(modalDate);
+      const used = restsUsedInWeek(weekStart, iso);
+      if (used >= 2) {
+        alert('Both rest days for this week are already used.');
+        return;
+      }
+      DATA.logs[iso] = { state: 'rest', reps: 0 };
+    } else {
+      const reps = Math.max(0, parseInt(document.getElementById('modalRepsInput').value || '0', 10));
+      DATA.logs[iso] = { state, reps };
+    }
+  }
+  saveData(DATA);
+  document.getElementById('dayModalOverlay').classList.add('hidden');
+  renderHome();
+});
+
+// ---------- Settings drawer ----------
+function openSettingsDrawer() {
+  document.getElementById('startingGoalInput').value = DATA.settings.startingGoal;
+  document.getElementById('incrementInput').value = DATA.settings.increment;
+  document.getElementById('startDateInput').value = DATA.settings.startDate;
+  document.getElementById('settingsView').classList.add('open');
+  document.getElementById('drawerBackdrop').classList.add('open');
+}
+function closeSettingsDrawer() {
+  DATA.settings.startingGoal = Math.max(1, parseInt(document.getElementById('startingGoalInput').value || '1', 10));
+  DATA.settings.increment = Math.max(0, parseInt(document.getElementById('incrementInput').value || '0', 10));
+  const newStart = document.getElementById('startDateInput').value;
+  if (newStart) DATA.settings.startDate = newStart;
+  saveData(DATA);
+  closeSettingsDrawerVisual();
+  renderHome();
+}
+function closeSettingsDrawerVisual() {
+  document.getElementById('settingsView').classList.remove('open');
+  document.getElementById('drawerBackdrop').classList.remove('open');
+}
+
+document.getElementById('settingsBtn').addEventListener('click', openSettingsDrawer);
+document.getElementById('closeSettingsBtn').addEventListener('click', closeSettingsDrawer);
+document.getElementById('drawerBackdrop').addEventListener('click', closeSettingsDrawer);
+
+// Swipe left anywhere on the home view to open the drawer, swipe right on the
+// drawer itself (or the backdrop) to close it.
+(function setupSwipeGestures() {
+  const SWIPE_THRESHOLD = 60;
+  let startX = null, startY = null, tracking = false;
+
+  function onTouchStart(e) {
+    const t = e.touches[0];
+    startX = t.clientX;
+    startY = t.clientY;
+    tracking = true;
+  }
+  function onTouchEnd(e, context) {
+    if (!tracking || startX === null) return;
+    tracking = false;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - startX;
+    const dy = t.clientY - startY;
+    if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dx) < Math.abs(dy) * 1.5) return; // not a clean horizontal swipe
+    if (context === 'home' && dx < 0) openSettingsDrawer();
+    if (context === 'drawer' && dx > 0) closeSettingsDrawer();
+  }
+
+  const home = document.getElementById('homeView');
+  home.addEventListener('touchstart', onTouchStart, { passive: true });
+  home.addEventListener('touchend', (e) => onTouchEnd(e, 'home'), { passive: true });
+
+  const drawer = document.getElementById('settingsView');
+  drawer.addEventListener('touchstart', onTouchStart, { passive: true });
+  drawer.addEventListener('touchend', (e) => onTouchEnd(e, 'drawer'), { passive: true });
+})();
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(DATA, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `pushedup-backup-${toISODate(todayDate())}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+document.getElementById('importBtn').addEventListener('click', () => {
+  document.getElementById('importFile').click();
+});
+document.getElementById('importFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const imported = JSON.parse(reader.result);
+      if (!imported.settings || !imported.logs) throw new Error('Invalid file');
+      DATA = imported;
+      saveData(DATA);
+      alert('Data imported.');
+      renderHome();
+    } catch (err) {
+      alert('Could not read that file. Make sure it is a PushedUp backup.');
+    }
+  };
+  reader.readAsText(file);
+});
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (confirm('This will erase all logged days and settings on this device. Continue?')) {
+    localStorage.removeItem(STORAGE_KEY);
+    DATA = loadData();
+    closeSettingsDrawerVisual();
+    renderHome();
+  }
+});
+
+// ---------- Service worker ----------
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+// ---------- Init ----------
+renderHome();
+
+</script>
+</body>
+</html>
